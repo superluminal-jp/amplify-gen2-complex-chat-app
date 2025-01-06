@@ -1,129 +1,143 @@
 "use client";
 
-import { useState } from "react";
-import ReactMarkdown from "react-markdown";
+import { useState, useMemo } from "react";
 import {
     Flex,
     Heading,
+    View,
     Button,
-    SelectField,
     TextField,
     TextAreaField,
-    View,
 } from "@aws-amplify/ui-react";
 import { AIConversation } from "@aws-amplify/ui-react-ai";
 import { useAIConversation } from "../../client";
 
 export default function FormChat() {
-    const [context, setContext] = useState(
-        "Hello, my name is ${Name} and I am ${Age} years old."
-    );
-    const [formFields, setFormFields] = useState<
-        { name: string; value: string }[]
-    >([
+    const selectedModel = "chatClaude35Sonnet";
+
+    // フォームの入力項目を配列で管理
+    const [formFields, setFormFields] = useState([
         { name: "Name", value: "John" },
         { name: "Age", value: "30" },
     ]);
 
-    type ModelType = "chatClaude3Haiku" | "chatClaude35Sonnet";
+    // 新規追加用のフィールド名・値を管理
+    const [newFieldName, setNewFieldName] = useState("");
+    const [newFieldValue, setNewFieldValue] = useState("");
 
-    // Available AI models
-    const models = [
-        { value: "chatClaude3Haiku" as ModelType, label: "Claude 3 Haiku" },
-        {
-            value: "chatClaude35Sonnet" as ModelType,
-            label: "Claude 3.5 Sonnet",
-        },
-    ];
+    // コンテキスト文字列（${Name} や ${Age} などを含む）
+    const [context, setContext] = useState(
+        "Hello, my name is ${Name} and I am ${Age} years old."
+    );
 
-    // State for the selected model
-    const [selectedModel, setSelectedModel] =
-        useState<ModelType>("chatClaude3Haiku");
-
-    // Prepare conversations for all models
-    const conversations = models.reduce((acc, model) => {
-        const [conversationData, sendMessageHandler] = useAIConversation(
-            model.value
-        );
-        acc[model.value] = { conversationData, sendMessageHandler };
-        return acc;
-    }, {} as Record<string, { conversationData: any; sendMessageHandler: any }>);
-
-    // Extract selected model's conversation
-    const { conversationData, sendMessageHandler } =
-        conversations[selectedModel];
-
-    // Add a new form field
-    const addFormField = () =>
-        setFormFields([...formFields, { name: "", value: "" }]);
-
-    // Update a form field's name or value
+    // フィールドの編集処理
     const updateFormField = (
         index: number,
         key: "name" | "value",
-        value: string
+        newValue: string
     ) => {
-        const updatedFields = [...formFields];
-        updatedFields[index][key] = value;
-        setFormFields(updatedFields);
+        setFormFields((prevFields) => {
+            const updatedFields = [...prevFields];
+            updatedFields[index][key] = newValue;
+            return updatedFields;
+        });
     };
 
-    // Convert form fields into a dictionary for context
-    const aiContextData = formFields.reduce((contextData, field) => {
-        contextData[field.name] = field.value;
-        return contextData;
-    }, {} as Record<string, string>);
+    // フィールドの追加処理
+    const addFormField = () => {
+        if (!newFieldName) return; // フィールド名がない場合は何もしない
+        setFormFields((prev) => [
+            ...prev,
+            { name: newFieldName, value: newFieldValue },
+        ]);
+        setNewFieldName("");
+        setNewFieldValue("");
+    };
 
-    // Replace variables in the context
-    const processedContext = context.replace(
-        /\${(.*?)}/g,
-        (_, key) => aiContextData[key] || ""
-    );
+    // フィールドの削除処理
+    const removeFormField = (index: number) => {
+        setFormFields((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    // formFields（配列）から { Name: "xxx", Age: "yyy", ... } の形に整形
+    const formDataObject = useMemo(() => {
+        const obj: Record<string, string> = {};
+        formFields.forEach((field) => {
+            obj[field.name] = field.value;
+        });
+        return obj;
+    }, [formFields]);
+
+    // AIモデルとのやりとり
+    const [
+        {
+            data: { messages },
+            isLoading,
+        },
+        handleSendMessage,
+    ] = useAIConversation(selectedModel);
+
+    // コンテキスト文字列の中にある ${FieldName} を実際の値に置換
+    const processedContext = useMemo(() => {
+        return Object.entries(formDataObject).reduce(
+            (acc, [key, value]) => acc.replace(`\${${key}}`, value),
+            context
+        );
+    }, [formDataObject, context]);
 
     return (
-        <Flex direction="column" gap="1rem" style={{ width: "80%" }}>
-            {/* Header */}
+        <Flex direction="column" gap="1rem" style={{ width: "100%" }}>
             <Flex>
                 <Heading level={1}>Form Chat App</Heading>
             </Flex>
 
-            {/* Dynamic Form Fields */}
-            <Flex direction="column" gap="0.75rem">
-                {formFields.map((field, index) => (
-                    <Flex
-                        key={index}
-                        direction="row"
-                        gap="1rem"
-                        alignItems="center"
-                    >
-                        <TextField
-                            width="40%"
-                            label="Field Name"
-                            placeholder="Enter field name"
-                            size="small"
-                            value={field.name}
-                            onChange={(e) =>
-                                updateFormField(index, "name", e.target.value)
-                            }
-                        />
-                        <TextField
-                            width="60%"
-                            label="Field Value"
-                            placeholder="Enter field value"
-                            size="small"
-                            value={field.value}
-                            onChange={(e) =>
-                                updateFormField(index, "value", e.target.value)
-                            }
-                        />
-                    </Flex>
-                ))}
-                <Button variation="primary" size="small" onClick={addFormField}>
-                    Add Field
-                </Button>
+            {/* 既存のフィールド一覧表示・編集 */}
+            {formFields.map((field, index) => (
+                <Flex key={index} gap="1rem" alignItems="flex-end" width="100%">
+                    <TextField
+                        label="Field Name"
+                        placeholder="e.g., Hobby"
+                        value={field.name}
+                        onChange={(e) =>
+                            updateFormField(index, "name", e.target.value)
+                        }
+                        width="40%"
+                    />
+                    <TextField
+                        label="Field Value"
+                        placeholder="e.g., Chess"
+                        value={field.value}
+                        onChange={(e) =>
+                            updateFormField(index, "value", e.target.value)
+                        }
+                        width="60%"
+                    />
+                    <Button onClick={() => removeFormField(index)}>
+                        Remove
+                    </Button>
+                </Flex>
+            ))}
+
+            {/* 新しくフィールドを追加するためのエリア */}
+            <Flex gap="1rem" alignItems="flex-end" width="100%">
+                <TextField
+                    label="New Field Name"
+                    placeholder="e.g., Hobby"
+                    value={newFieldName}
+                    onChange={(e) => setNewFieldName(e.target.value)}
+                    width="40%"
+                />
+                <TextField
+                    label="New Field Value"
+                    placeholder="e.g., Soccer"
+                    value={newFieldValue}
+                    onChange={(e) => setNewFieldValue(e.target.value)}
+                    width="60%"
+                />
+                <Button onClick={addFormField}>Add Field</Button>
             </Flex>
 
-            {/* Context */}
+            {/* context エディタ */}
             <Flex>
                 <TextAreaField
                     autoResize
@@ -138,41 +152,20 @@ export default function FormChat() {
                 />
             </Flex>
 
-            {/* Model Selection */}
-            <Flex>
-                <SelectField
-                    label="Choose AI Model"
-                    value={selectedModel}
-                    onChange={(e) =>
-                        setSelectedModel(e.target.value as ModelType)
-                    }
-                    width="100%"
-                >
-                    {models.map((model) => (
-                        <option key={model.value} value={model.value}>
-                            {model.label}
-                        </option>
-                    ))}
-                </SelectField>
-            </Flex>
+            {/* プレビューエリア */}
+            <Heading level={4}>Context Preview</Heading>
+            <Flex>{processedContext}</Flex>
 
-            {/* AI Conversation */}
             <View>
                 <AIConversation
-                    messages={conversationData.data.messages}
-                    isLoading={conversationData.isLoading}
-                    handleSendMessage={sendMessageHandler || (() => {})}
+                    messages={messages}
+                    isLoading={isLoading}
+                    handleSendMessage={handleSendMessage}
                     allowAttachments
-                    messageRenderer={{
-                        text: ({ text }) => (
-                            <ReactMarkdown>{text}</ReactMarkdown>
-                        ),
-                    }}
-                    aiContext={() => {
-                        return {
-                            context: processedContext,
-                        };
-                    }}
+                    // 変数展開後の context を会話に渡す
+                    aiContext={() => ({
+                        context: processedContext,
+                    })}
                 />
             </View>
         </Flex>
