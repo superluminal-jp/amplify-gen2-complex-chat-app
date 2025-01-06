@@ -11,6 +11,8 @@ const backend = defineBackend({
     storage,
 });
 
+export const s3BucketName = backend.storage.resources.bucket.bucketName;
+
 new EmbeddingLambdaStack(
     backend.createStack("EmbeddingLambdaStack"),
     "EmbeddingLambdaStack",
@@ -22,5 +24,3 @@ new RagChatLambdaStack(
     "RagChatLambdaStack",
     {}
 );
-
-export const s3BucketName = backend.storage.resources.bucket.bucketName;
