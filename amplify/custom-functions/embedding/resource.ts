@@ -2,7 +2,7 @@ import { CfnOutput, Stack, StackProps, Duration } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
-import outputs from "../../../amplify_outputs.json";
+// import outputs from "../../../amplify_outputs.json";
 import { s3BucketName } from "../../backend";
 
 export class EmbeddingLambdaStack extends Stack {
@@ -15,7 +15,7 @@ export class EmbeddingLambdaStack extends Stack {
             codePath?: string; // Path to Lambda function code
             description?: string; // Lambda function description
             environmentVariables?: { [key: string]: string }; // Environment variables
-            s3BucketName?: string; // S3 bucket to grant access to
+            // s3BucketName?: string; // S3 bucket to grant access to
             layerArnList?: string[]; // List of Lambda Layer ARNs to attach
             timeoutInSeconds?: number; // Function timeout in seconds
             memorySizeInMB?: number; // Function memory allocation in MB
@@ -30,7 +30,7 @@ export class EmbeddingLambdaStack extends Stack {
             codePath = "./amplify/custom-functions/embedding",
             description = "Custom Lambda function created using CDK",
             environmentVariables = {},
-            s3BucketName,
+            // s3BucketName,
             layerArnList = [],
             timeoutInSeconds = 300,
             memorySizeInMB = 128,
