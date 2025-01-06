@@ -11,7 +11,8 @@ const backend = defineBackend({
     storage,
 });
 
-export const s3BucketName = backend.storage.resources.bucket.bucketName;
+// export before using it in other files
+export const s3BucketName = backend.storage.resources.bucket.bucketName; 
 
 new EmbeddingLambdaStack(
     backend.createStack("EmbeddingLambdaStack"),
