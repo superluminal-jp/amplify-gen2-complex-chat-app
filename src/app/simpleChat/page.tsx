@@ -5,7 +5,7 @@ import { AIConversation } from "@aws-amplify/ui-react-ai";
 import { useAIConversation } from "../../client";
 
 export default function SimpleChat() {
-    const selectedModel = "chatClaude3Haiku";
+    const selectedModel = "chatClaude35Sonnet";
 
     const [
         {
