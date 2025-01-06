@@ -3,6 +3,7 @@ import { Construct } from "constructs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as iam from "aws-cdk-lib/aws-iam";
 import outputs from "../../../amplify_outputs.json";
+import { s3BucketName } from "../../backend";
 
 export class EmbeddingLambdaStack extends Stack {
     constructor(
@@ -101,7 +102,8 @@ export class EmbeddingLambdaStack extends Stack {
         // );
 
         // Bucket name from amplify_outputs.json
-        const s3_bucket = outputs.storage.bucket_name;
+        // const s3_bucket = outputs.storage.bucket_name;
+        const s3_bucket = s3BucketName;
 
         // Allow S3 access
         embeddingFunction.addToRolePolicy(

@@ -89,7 +89,8 @@ export class RagChatLambdaStack extends Stack {
         // });
 
         // Bucket name from amplify_outputs.json
-        const s3_bucket = outputs.storage.bucket_name;
+        // const s3_bucket = outputs.storage.bucket_name;
+        const s3_bucket = s3BucketName;
 
         // Allow S3 access
         ragChatFunction.addToRolePolicy(

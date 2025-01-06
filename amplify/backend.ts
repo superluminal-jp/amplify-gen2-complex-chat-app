@@ -22,3 +22,5 @@ new RagChatLambdaStack(
     "RagChatLambdaStack",
     {}
 );
+
+export const s3BucketName = backend.storage.resources.bucket.bucketName;
